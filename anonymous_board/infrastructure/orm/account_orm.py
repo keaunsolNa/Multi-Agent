@@ -1,5 +1,4 @@
-from uuid import uuid4
-from sqlalchemy import Column, Integer, String, DateTime, Enum as SAEnum
+from sqlalchemy import Column, String, DateTime, Enum as SAEnum
 from enum import Enum as PyEnum
 from datetime import datetime
 
@@ -27,7 +26,7 @@ class AccountORM(Base):
     phone_number = Column(String(255), nullable=True)
     active_status = Column(SAEnum(YN, native_enum=True), nullable=True)
 
-    role_id = Column(String(255), nullable=True)    ## TODO 권한 관련 추가 작업 필요
+    role_id = Column(String(255), nullable=True)    ## TODO 권한 관련 추가 후 nullable=False 작업 필요
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
