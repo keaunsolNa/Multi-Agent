@@ -29,8 +29,27 @@ async def create_account(request: CreateAccountRequest):
         updated_at=account.updated_at
     )
 
+@account_router.get("/list", response_model=list[AccountResponse])
+def list_accounts():
+    account = usecase.list_account()
+    return [
+        AccountResponse(
+            user_uuid=a.user_uuid,
+            oauth_id=a.oauth_id,
+            oauth_type=a.oauth_type,
+            nickname=a.nickname,
+            name=a.name,
+            profile_image=a.profile_image,
+            email=a.email,
+            phone_number=a.phone_number,
+            active_status=a.active_status,
+            role_id=a.role_id,
+            updated_at=a.updated_at,
+            created_at=a.created_at,
+        ) for a in account
+    ]
 
-@account_router.get("/read/{oauth_type}/{oauth_id}", response_model=AccountResponse)
+@account_router.get("/{oauth_type}/{oauth_id}", response_model=AccountResponse)
 def get_account_by_oauth_id(oauth_type: str, oauth_id: str):
     account = usecase.get_account_by_oauth_id(oauth_type, oauth_id)
     if not account:

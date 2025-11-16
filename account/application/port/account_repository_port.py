@@ -12,6 +12,10 @@ class AccountRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    def list_all(self) -> list[Account]:
+        pass
+
+    @abstractmethod
     def get_by_oauth_id(self, oauth_type: str, user_oauth_id: str) -> Optional[Account]:
         pass
 
