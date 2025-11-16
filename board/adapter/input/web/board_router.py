@@ -45,3 +45,19 @@ def list_boards():
             updated_at=b.updated_at
         ) for b in board
     ]
+
+@board_router.get("/{board_id}", response_model=BoardResponse)
+def get_board(board_id: int):
+    board = usecase.get_board(board_id)
+    if not board:
+        raise HTTPException(status_code=404, detail="Board not found")
+    return BoardResponse(
+        id=board.id,
+        board_type=board.board_type,
+        user_id=board.user_id,
+        title=board.title,
+        content=board.content,
+        view_count=board.view_count,
+        created_at=board.created_at,
+        updated_at=board.updated_at,
+    )

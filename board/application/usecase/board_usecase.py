@@ -1,3 +1,5 @@
+from typing import Optional
+
 from board.domain.baord import Board
 
 
@@ -11,3 +13,6 @@ class BoardUseCase:
 
     def list_boards(self) -> list[Board]:
         return self.board_repo.list_boards()
+
+    def get_board(self, board_id: int) -> Optional[Board]:
+        return self.board_repo.get_board(board_id)

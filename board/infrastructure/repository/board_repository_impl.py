@@ -1,3 +1,5 @@
+from typing import Optional
+
 from board.application.port.board_repository_port import BoardRepositoryPort
 from board.domain.baord import Board
 from board.infrastructure.orm.board_orm import BoardORM
@@ -42,3 +44,18 @@ class BoardRepositoryImpl(BoardRepositoryPort):
             board.updated_at = orm_board.updated_at
             boards.append(board)
         return boards
+
+    def get_board(self, board_id: int) -> Optional[Board]:
+        orm_board = self.db.query(BoardORM).filter(BoardORM.id == board_id).first()
+        if orm_board:
+            board = Board(
+                title=orm_board.title,
+                content=orm_board.content,
+                board_type=orm_board.board_type,
+                user_id=orm_board.user_id,
+            )
+            board.id = orm_board.id
+            board.created_at = orm_board.created_at
+            board.updated_at = orm_board.updated_at
+            return board
+        return None
