@@ -80,3 +80,14 @@ def update_board(request: UpdateBoardRequest):
         created_at=board.created_at,
         updated_at=board.updated_at,
     )
+
+@board_router.delete("/delete/{board_id}")
+def delete_board(board_id: int):
+    try:
+        success = usecase.delete_board(board_id)
+        if success:
+            return {"message": "Deleted successfully", "status": "success"}
+        else:
+            raise HTTPException(status_code=404, detail="Board not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

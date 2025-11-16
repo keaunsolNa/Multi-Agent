@@ -21,3 +21,7 @@ class BoardRepositoryPort(ABC):
     @abstractmethod
     def update_board(self, board: Board) -> Board:
         pass
+
+    @abstractmethod
+    def delete_board(self, board_id: int) -> bool:
+        pass

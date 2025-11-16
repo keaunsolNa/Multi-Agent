@@ -80,3 +80,8 @@ class BoardRepositoryImpl(BoardRepositoryPort):
         self.db.commit()
         board = self.get_board(board.id)
         return board
+
+    def delete_board(self, board_id: int) -> bool:
+        deleted_count = self.db.query(BoardORM).filter(BoardORM.id == board_id).delete()
+        self.db.commit()
+        return deleted_count > 0

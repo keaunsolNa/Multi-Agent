@@ -32,3 +32,6 @@ class BoardUseCase:
         )
         board.id = request.id
         return self.board_repo.update_board(board)
+
+    def delete_board(self, board_id: int) -> bool:
+        return self.board_repo.delete_board(board_id)
