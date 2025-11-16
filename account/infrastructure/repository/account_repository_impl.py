@@ -32,7 +32,6 @@ class AccountRepositoryImpl(AccountRepositoryPort):
         self.db.commit()
         self.db.refresh(orm_account)
 
-        account.user_uuid = orm_account.user_uuid
         account.created_at = orm_account.created_at
         account.updated_at = orm_account.updated_at
         return account
@@ -57,6 +56,26 @@ class AccountRepositoryImpl(AccountRepositoryPort):
             account.updated_at = orm_account.updated_at
             accounts.append(account)
         return accounts
+
+    def get_account_by_user_uuid(self, user_uuid: str) -> Optional[Account]:
+        orm_account = self.db.query(AccountORM).filter(AccountORM.user_uuid == user_uuid).first()
+        if orm_account:
+            account = Account(
+                user_uuid=orm_account.user_uuid,
+                oauth_id=orm_account.oauth_id,
+                oauth_type=orm_account.oauth_type,
+                nickname=orm_account.nickname,
+                name=orm_account.name,
+                profile_image=orm_account.profile_image,
+                email=orm_account.email,
+                phone_number=orm_account.phone_number,
+                active_status=orm_account.active_status,
+                role_id=orm_account.role_id
+            )
+            account.created_at = orm_account.created_at
+            account.updated_at = orm_account.updated_at
+            return account
+        return None
 
     def get_by_oauth_id(self, oauth_type: str, user_oauth_id: str) -> Optional[Account]:
         orm_account = self.db.query(AccountORM).filter(AccountORM.oauth_type == oauth_type,

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.openapi.utils import status_code_ranges
 
 from account.adapter.input.web.request.create_account_request import CreateAccountRequest
 from account.adapter.input.web.response.account_response import AccountResponse
@@ -49,6 +48,26 @@ def list_accounts():
             created_at=a.created_at,
         ) for a in account
     ]
+
+@account_router.get("/{user_uuid}", response_model=AccountResponse)
+def get_account_by_user_uuid(user_uuid: str):
+    account = usecase.get_account_by_user_uuid(user_uuid)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return AccountResponse(
+        user_uuid=account.user_uuid,
+        oauth_id=account.oauth_id,
+        oauth_type=account.oauth_type,
+        nickname=account.nickname,
+        name=account.name,
+        profile_image=account.profile_image,
+        email=account.email,
+        phone_number=account.phone_number,
+        active_status=account.active_status,
+        updated_at=account.updated_at,
+        created_at=account.created_at,
+        role_id=account.role_id
+    )
 
 @account_router.get("/{oauth_type}/{oauth_id}", response_model=AccountResponse)
 def get_account_by_oauth_id(oauth_type: str, oauth_id: str):

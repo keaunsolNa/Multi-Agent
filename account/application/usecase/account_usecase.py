@@ -19,6 +19,9 @@ class AccountUseCase:
     def get_account_by_oauth_id(self, oauth_type:str, oauth_id: str) -> Optional[Account]:
         return self.account_repo.get_by_oauth_id(oauth_type, oauth_id)
 
+    def get_account_by_user_uuid(self, user_uuid: str) -> Optional[Account]:
+        return self.account_repo.get_account_by_user_uuid(user_uuid)
+
     def update(self, account: CreateAccountRequest):
         account = self.account_repo.update(account)
         return account
