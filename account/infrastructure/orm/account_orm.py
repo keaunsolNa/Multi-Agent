@@ -17,6 +17,7 @@ class AccountORM(Base):
     __tablename__ = "account"
 
     user_uuid = Column(String(36), primary_key=True, index=True)
+    oauth_id = Column(String(255), nullable=False)
     oauth_type = Column(SAEnum(OAuthProvider, native_enum=True), nullable=False, index=True)
 
     nickname = Column(String(255), nullable=True)
@@ -32,4 +33,4 @@ class AccountORM(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
-        return f"<AccountORM id={self.id} email={self.email} oauth_type={self.oauth_type} nickname={self.nickname}>"
+        return f"<AccountORM id={self.user_uuid} email={self.email} oauth_type={self.oauth_type} nickname={self.nickname}>"
