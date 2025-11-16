@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from account.adapter.input.web.account_router import account_router
 from anonymous_board.adapter.input.web.anonymous_board_router import anonymous_board_router
+from board.adapter.input.web.board_router import board_router
 from config.database.session import Base, engine
 from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
 
@@ -19,19 +20,21 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # 정확한 origin만 허용
-    allow_credentials=True,      # 쿠키 허용
-    allow_methods=["*"],         # 모든 HTTP 메서드 허용
-    allow_headers=["*"],         # 모든 헤더 허용
+    allow_origins=origins,  # 정확한 origin만 허용
+    allow_credentials=True,  # 쿠키 허용
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
 )
 
-app.include_router(anonymous_board_router, prefix="/board")
+app.include_router(anonymous_board_router, prefix="/anonymous_board")
 app.include_router(authentication_router, prefix="/authentication")
 app.include_router(account_router, prefix="/account")
+app.include_router(board_router, prefix="/board")
 
 # 앱 실행
 if __name__ == "__main__":
     import uvicorn
+
     host = os.getenv("APP_HOST")
     port = int(os.getenv("APP_PORT"))
     Base.metadata.drop_all(bind=engine)
