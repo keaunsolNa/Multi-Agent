@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class AccountResponse(BaseModel):
     user_uuid: str
@@ -11,3 +12,5 @@ class AccountResponse(BaseModel):
     phone_number: str
     active_status: str
     role_id: str
+    updated_at: datetime
+    created_at: datetime

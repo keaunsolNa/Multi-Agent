@@ -3,8 +3,9 @@ import httpx
 
 from fastapi import APIRouter, Response, Request, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
+from datetime import datetime
 
-from account.adapter.input.web.account_router import create_account
+from account.adapter.input.web.account_router import create_account, update_account
 from account.adapter.input.web.request.create_account_request import CreateAccountRequest
 from account.application.usecase.account_usecase import AccountUseCase
 from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
@@ -85,7 +86,21 @@ async def process_google_redirect(
     print("[DEBUG] Existing account:", existing_account)
     if existing_account:
         print("[DEBUG] Account already exists. Redirecting to /")
-        #TODO: updated_at 수정
+        account = update_account(
+            request=CreateAccountRequest(
+                user_uuid=existing_account.user_uuid,
+                oauth_id=existing_account.oauth_id,
+                oauth_type=existing_account.oauth_type,
+                nickname=existing_account.nickname,
+                name=existing_account.name,
+                profile_image=existing_account.profile_image,
+                email=existing_account.email,
+                phone_number=existing_account.phone_number,
+                active_status=existing_account.active_status,
+                role_id=existing_account.role_id,
+            )
+        )
+        print("[DEBUG] Account updated:", account)
         return RedirectResponse("/")
     else:
         print("[DEBUG] Account does not exist. Creating a new account.")

@@ -24,7 +24,9 @@ async def create_account(request: CreateAccountRequest):
         email=account.email,
         phone_number=account.phone_number,
         active_status=account.active_status,
-        role_id=account.role_id
+        role_id=account.role_id,
+        created_at=account.created_at,
+        updated_at=account.updated_at
     )
 
 
@@ -43,5 +45,25 @@ def get_account_by_oauth_id(oauth_type: str, oauth_id: str):
         email=account.email,
         phone_number=account.phone_number,
         active_status=account.active_status,
+        updated_at=account.updated_at,
+        created_at=account.created_at,
         role_id=account.role_id
+    )
+
+@account_router.put("/update", response_model=AccountResponse)
+def update_account(request: CreateAccountRequest):
+    account = usecase.update(request)
+    return AccountResponse(
+        user_uuid=account.user_uuid,
+        oauth_id=account.oauth_id,
+        oauth_type=account.oauth_type,
+        nickname=account.nickname,
+        name=account.name,
+        profile_image=account.profile_image,
+        email=account.email,
+        phone_number=account.phone_number,
+        active_status=account.active_status,
+        role_id=account.role_id,
+        updated_at=account.updated_at,
+        created_at=account.created_at
     )

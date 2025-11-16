@@ -1,5 +1,6 @@
 from typing import Optional
 
+from account.adapter.input.web.request.create_account_request import CreateAccountRequest
 from account.application.port.account_repository_port import AccountRepositoryPort
 from account.domain.account import Account
 
@@ -14,3 +15,7 @@ class AccountUseCase:
 
     def get_account_by_oauth_id(self, oauth_type:str, oauth_id: str) -> Optional[Account]:
         return self.account_repo.get_by_oauth_id(oauth_type, oauth_id)
+
+    def update(self, account: CreateAccountRequest):
+        account = self.account_repo.update(account)
+        return account

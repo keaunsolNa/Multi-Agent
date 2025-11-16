@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from account.adapter.input.web.request.create_account_request import CreateAccountRequest
 from account.application.port.account_repository_port import AccountRepositoryPort
 from account.domain.account import Account
 from account.infrastructure.orm.account_orm import AccountORM
@@ -55,3 +57,20 @@ class AccountRepositoryImpl(AccountRepositoryPort):
             account.updated_at = orm_account.updated_at
             return account
         return None
+
+    def update(self, account: CreateAccountRequest):
+        self.db.query(AccountORM).filter(AccountORM.user_uuid == account.user_uuid).update(
+            {
+                "nickname": account.nickname,
+                "name": account.name,
+                "profile_image": account.profile_image,
+                "email": account.email,
+                "phone_number": account.phone_number,
+                "active_status": account.active_status,
+                "role_id": account.role_id,
+                "updated_at": datetime.utcnow()
+            }
+        )
+        self.db.commit()
+        account = self.get_by_oauth_id(account.oauth_type, account.oauth_id)
+        return account

@@ -21,4 +21,5 @@ class Account:
         self.email = email
         self.phone_number = phone_number
         self.active_status = active_status
-        self.updated_at = datetime.utcnow()
+        self.role_id = role_id
+        return self
