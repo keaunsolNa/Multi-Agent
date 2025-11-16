@@ -17,3 +17,7 @@ class BoardRepositoryPort(ABC):
     @abstractmethod
     def get_board(self, board_id: int) -> Optional[Board]:
         pass
+
+    @abstractmethod
+    def update_board(self, board: Board) -> Board:
+        pass

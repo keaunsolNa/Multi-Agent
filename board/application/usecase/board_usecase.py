@@ -1,5 +1,7 @@
 from typing import Optional
 
+from board.adapter.input.web.request.create_board_request import CreateBoardRequest
+from board.adapter.input.web.request.update_board_request import UpdateBoardRequest
 from board.domain.baord import Board
 
 
@@ -16,3 +18,17 @@ class BoardUseCase:
 
     def get_board(self, board_id: int) -> Optional[Board]:
         return self.board_repo.get_board(board_id)
+
+    def update_board(self, board: Board) -> Board:
+        return self.board_repo.update_board(board)
+
+    def update_board_from_request(self, request: UpdateBoardRequest) -> Board:
+        # 요청 모델을 Board 도메인 객체로 변환
+        board = Board(
+            board_type=request.board_type,
+            user_id=request.user_id,
+            title=request.title,
+            content=request.content
+        )
+        board.id = request.id
+        return self.board_repo.update_board(board)

@@ -3,8 +3,10 @@ from fastapi import APIRouter, HTTPException
 from account.application.usecase.account_usecase import AccountUseCase
 from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
 from board.adapter.input.web.request.create_board_request import CreateBoardRequest
+from board.adapter.input.web.request.update_board_request import UpdateBoardRequest
 from board.adapter.input.web.response.board_response import BoardResponse
 from board.application.usecase.board_usecase import BoardUseCase
+from board.domain.baord import Board
 from board.infrastructure.repository.board_repository_impl import BoardRepositoryImpl
 
 board_router = APIRouter()
@@ -51,6 +53,23 @@ def get_board(board_id: int):
     board = usecase.get_board(board_id)
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
+
+    board.view_count += 1
+    board = usecase.update_board(board)
+    return BoardResponse(
+        id=board.id,
+        board_type=board.board_type,
+        user_id=board.user_id,
+        title=board.title,
+        content=board.content,
+        view_count=board.view_count,
+        created_at=board.created_at,
+        updated_at=board.updated_at,
+    )
+
+@board_router.put("/update", response_model=BoardResponse)
+def update_board(request: UpdateBoardRequest):
+    board = usecase.update_board_from_request(request)
     return BoardResponse(
         id=board.id,
         board_type=board.board_type,

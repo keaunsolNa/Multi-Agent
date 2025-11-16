@@ -1,4 +1,7 @@
+from datetime import datetime
 from typing import Optional
+
+from sqlalchemy import func
 
 from board.application.port.board_repository_port import BoardRepositoryPort
 from board.domain.baord import Board
@@ -40,6 +43,7 @@ class BoardRepositoryImpl(BoardRepositoryPort):
                 user_id=orm_board.user_id,
             )
             board.id = orm_board.id
+            board.view_count = orm_board.view_count
             board.created_at = orm_board.created_at
             board.updated_at = orm_board.updated_at
             boards.append(board)
@@ -55,7 +59,24 @@ class BoardRepositoryImpl(BoardRepositoryPort):
                 user_id=orm_board.user_id,
             )
             board.id = orm_board.id
+            board.view_count = orm_board.view_count
             board.created_at = orm_board.created_at
             board.updated_at = orm_board.updated_at
             return board
         return None
+
+    def update_board(self, board: Board):
+        # view_count는 기존 값에 1을 더해서 업데이트
+        self.db.query(BoardORM).filter(BoardORM.id == board.id).update(
+            {
+                "title": board.title,
+                "content": board.content,
+                "board_type": board.board_type,
+                "updated_at": datetime.utcnow(),
+                "view_count": func.coalesce(BoardORM.view_count, 0) + 1
+            },
+            synchronize_session=False
+        )
+        self.db.commit()
+        board = self.get_board(board.id)
+        return board
