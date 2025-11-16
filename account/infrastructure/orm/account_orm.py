@@ -24,7 +24,7 @@ class AccountORM(Base):
     profile_image = Column(String(255), nullable=True)
     email = Column(String(255), nullable=True)
     phone_number = Column(String(255), nullable=True)
-    active_status = Column(SAEnum(YN, native_enum=True), nullable=True)
+    active_status = Column(SAEnum(YN, native_enum=True), nullable=False, default=YN.Y)
 
     role_id = Column(String(255), nullable=True)    ## TODO 권한 관련 추가 후 nullable=False 작업 필요
 
