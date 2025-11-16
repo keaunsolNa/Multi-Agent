@@ -95,3 +95,8 @@ class AccountRepositoryImpl(AccountRepositoryPort):
         self.db.commit()
         account = self.get_by_oauth_id(account.oauth_type, account.oauth_id)
         return account
+
+    def delete(self, user_uuid: str) -> bool:
+        deleted_count = self.db.query(AccountORM).filter(AccountORM.user_uuid == user_uuid).delete()
+        self.db.commit()
+        return deleted_count > 0

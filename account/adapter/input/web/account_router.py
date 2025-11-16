@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.openapi.utils import status_code_ranges
 
 from account.adapter.input.web.request.create_account_request import CreateAccountRequest
 from account.adapter.input.web.response.account_response import AccountResponse
@@ -86,3 +87,14 @@ def update_account(request: CreateAccountRequest):
         updated_at=account.updated_at,
         created_at=account.created_at
     )
+
+@account_router.delete("/delete/{user_uuid}")
+def delete_account(user_uuid: str):
+    try:
+        success = usecase.delete_account(user_uuid)
+        if success:
+            return {"message": "Deleted successfully", "status": "success"}
+        else:
+            raise HTTPException(status_code=404, detail="Account not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

@@ -22,3 +22,6 @@ class AccountUseCase:
     def update(self, account: CreateAccountRequest):
         account = self.account_repo.update(account)
         return account
+
+    def delete_account(self, user_uuid: str) -> bool:
+        return self.account_repo.delete(user_uuid)

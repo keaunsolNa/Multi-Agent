@@ -22,3 +22,7 @@ class AccountRepositoryPort(ABC):
     @abstractmethod
     def update(self, account: CreateAccountRequest) -> Account:
         pass
+
+    @abstractmethod
+    def delete(self, user_uuid: str) -> bool:
+        pass
