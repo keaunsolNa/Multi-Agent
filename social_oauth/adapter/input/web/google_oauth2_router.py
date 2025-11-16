@@ -6,6 +6,8 @@ from fastapi.responses import RedirectResponse
 
 from account.adapter.input.web.account_router import create_account
 from account.adapter.input.web.request.create_account_request import CreateAccountRequest
+from account.application.usecase.account_usecase import AccountUseCase
+from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
 from config.redis_config import get_redis
 from social_oauth.application.usecase.google_oauth2_usecase import GoogleOAuth2UseCase
 from social_oauth.infrastructure.service.google_oauth2_service import GoogleOAuth2Service
@@ -77,24 +79,33 @@ async def process_google_redirect(
     print("[DEBUG] Generated session_id:", session_id)
 
     # userId(oauth_id)에 일치하는 account 있는지 확인 한다.
+    account_usecase = AccountUseCase(AccountRepositoryImpl())
+    existing_account = account_usecase.get_account_by_oauth_id("GOOGLE", google_id)
 
-    # Create a new account using the retrieved user info
-    account = await create_account(
-        request=CreateAccountRequest(
-            user_uuid=session_id,
-            oauth_id=google_id,
-            oauth_type="GOOGLE",
-            nickname="",
-            name=userinfo.get("name"),
-            profile_image=userinfo.get("picture"),
-            email=userinfo.get("email"),
-            phone_number="",
-            active_status="Y",
-            role_id=""
+    print("[DEBUG] Existing account:", existing_account)
+    if existing_account:
+        print("[DEBUG] Account already exists. Redirecting to /")
+        #TODO: updated_at 수정
+        return RedirectResponse("/")
+    else:
+        print("[DEBUG] Account does not exist. Creating a new account.")
+
+        # Create a new account using the retrieved user info
+        account = await create_account(
+            request=CreateAccountRequest(
+                user_uuid=session_id,
+                oauth_id=google_id,
+                oauth_type="GOOGLE",
+                nickname="",
+                name=userinfo.get("name"),
+                profile_image=userinfo.get("picture"),
+                email=userinfo.get("email"),
+                phone_number="",
+                active_status="Y",
+                role_id=""
+            )
         )
-    )
-
-    print("[DEBUG] Account created:", account)
+        print("[DEBUG] Account created:", account)
 
     # Redis에 session 저장 (1시간 TTL)
     redis_client.set(session_id, access_token.access_token, ex=3600)
