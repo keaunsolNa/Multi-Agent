@@ -3,6 +3,7 @@ from datetime import datetime
 
 
 class BoardResponse(BaseModel):
+    id: int
     board_type: str
     user_id: str
     title: str

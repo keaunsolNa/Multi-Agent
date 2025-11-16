@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Optional
+
 
 class Board:
     def __init__(self, board_type: str, user_id: str, title: str, content: str):
+        self.id: Optional[int] = None
         self.board_type = board_type
         self.user_id = user_id
         self.title = title

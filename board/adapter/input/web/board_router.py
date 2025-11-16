@@ -14,11 +14,13 @@ user_case = AccountUseCase(AccountRepositoryImpl())
 @board_router.post("/create", response_model=BoardResponse)
 def create_board(request: CreateBoardRequest):
     user = user_case.get_account_by_user_uuid(request.user_id)
+    print("DEBUG USER", user)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
     board = usecase.create_board(request.board_type, request.user_id, request.title, request.content)
     return BoardResponse(
+        id=board.id,
         board_type=board.board_type,
         user_id=board.user_id,
         title=board.title,
@@ -27,3 +29,19 @@ def create_board(request: CreateBoardRequest):
         created_at=board.created_at,
         updated_at=board.updated_at,
     )
+
+@board_router.get("/list", response_model=list[BoardResponse])
+def list_boards():
+    board = usecase.list_boards()
+    return [
+        BoardResponse(
+            id= b.id,
+            board_type= b.board_type,
+            user_id=b.user_id,
+            title=b.title,
+            content=b.content,
+            view_count=b.view_count,
+            created_at=b.created_at,
+            updated_at=b.updated_at
+        ) for b in board
+    ]
