@@ -3,7 +3,6 @@ import httpx
 
 from fastapi import APIRouter, Response, Request, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
-from datetime import datetime
 
 from account.adapter.input.web.account_router import create_account, update_account
 from account.adapter.input.web.request.create_account_request import CreateAccountRequest
@@ -133,7 +132,6 @@ async def process_google_redirect(
         value=session_id,
         httponly=True,
         secure=False,
-        samesite="none",
         max_age=3600
     )
     print("[DEBUG] Cookie set in RedirectResponse directly")
