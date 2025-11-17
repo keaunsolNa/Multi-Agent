@@ -1,49 +1,111 @@
 import os
+from urllib.parse import urlencode, quote
+
 import requests
-from urllib.parse import quote
+from requests.exceptions import RequestException, Timeout, ConnectionError as RequestsConnectionError
 
 from social_oauth.adapter.input.web.request.get_access_token_request import GetAccessTokenRequest
 from social_oauth.adapter.input.web.response.access_token import AccessToken
 
-GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 class GoogleOAuth2Service:
 
-    def get_authorization_url(self) -> str:
-        client_id = os.getenv("GOOGLE_CLIENT_ID")
-        redirect_uri = quote(os.getenv("GOOGLE_REDIRECT_URI"), safe='')
-        scope = "openid email profile"
-        return (
-            f"{GOOGLE_AUTH_URL}"
-            f"?client_id={client_id}"
-            f"&redirect_uri={redirect_uri}"
-            f"&response_type=code"
-            f"&scope={quote(scope)}"
-        )
+    @staticmethod
+    def _get_env_var(key: str) -> str:
+        # 환경변수를 읽고 None인 경우 예외를 발생
+        value = os.getenv(key)
+        if value is None:
+            raise ValueError(f"Environment variable {key} is not set")
+        return value
 
-    def refresh_access_token(self, request: GetAccessTokenRequest) -> AccessToken:
+    @staticmethod
+    def get_authorization_url() -> str:
+        # Google OAuth 인증 URL을 생성
+        scope = "openid email profile"
+        
+        google_auth_url = GoogleOAuth2Service._get_env_var("GOOGLE_AUTH_URL")
+        client_id = GoogleOAuth2Service._get_env_var("GOOGLE_CLIENT_ID")
+        redirect_uri = GoogleOAuth2Service._get_env_var("GOOGLE_REDIRECT_URI")
+        
+        params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": scope
+        }
+        
+        query_string = urlencode(params, quote_via=quote)
+        return f"{google_auth_url}?{query_string}"
+
+    @staticmethod
+    def refresh_access_token(request: GetAccessTokenRequest) -> AccessToken:
+        # OAuth 인증 코드를 사용하여 액세스 토큰을 획득
+        google_token_url = GoogleOAuth2Service._get_env_var("GOOGLE_TOKEN_URL")
+        client_id = GoogleOAuth2Service._get_env_var("GOOGLE_CLIENT_ID")
+        client_secret = GoogleOAuth2Service._get_env_var("GOOGLE_CLIENT_SECRET")
+        redirect_uri = GoogleOAuth2Service._get_env_var("GOOGLE_REDIRECT_URI")
+        
         data = {
             "code": request.code,
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-            "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
             "grant_type": "authorization_code"
         }
-        resp = requests.post(GOOGLE_TOKEN_URL, data=data)
-        resp.raise_for_status()
-        token_data = resp.json()
-        # Pydantic 모델에 맞춰서 변환
+        
+        try:
+            resp = requests.post(google_token_url, data=data, timeout=10)
+            resp.raise_for_status()
+        except Timeout:
+            raise Exception("Request to Google OAuth token endpoint timed out")
+        except RequestsConnectionError:
+            raise Exception("Failed to connect to Google OAuth token endpoint")
+        except requests.HTTPError:
+            raise Exception(f"Google OAuth token request failed with status {resp.status_code}: {resp.text}")
+        except RequestException as e:
+            raise Exception(f"Unexpected error during Google OAuth token request: {str(e)}")
+        
+        try:
+            token_data = resp.json()
+        except ValueError as e:
+            raise Exception(f"Invalid JSON response from Google OAuth token endpoint: {str(e)}")
+        
+        # 필수 필드 검증
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise ValueError("Access token is missing in the response from Google OAuth")
+        
         return AccessToken(
-            access_token=token_data.get("access_token"),
-            token_type=token_data.get("token_type"),
+            access_token=access_token,
+            token_type=token_data.get("token_type", "Bearer"),
             expires_in=token_data.get("expires_in"),
             refresh_token=token_data.get("refresh_token")
         )
 
-    def fetch_user_profile(self, access_token: AccessToken) -> dict:
+    @staticmethod
+    def fetch_user_profile(access_token: AccessToken) -> dict:
+        # 액세스 토큰을 사용하여 사용자 프로필을 조회
+        if not access_token or not access_token.access_token:
+            raise ValueError("Access token is required to fetch user profile")
+        
+        google_userinfo_url = GoogleOAuth2Service._get_env_var("GOOGLE_USERINFO_URL")
         headers = {"Authorization": f"Bearer {access_token.access_token}"}
-        resp = requests.get(GOOGLE_USERINFO_URL, headers=headers)
-        resp.raise_for_status()
-        return resp.json()
+        
+        try:
+            resp = requests.get(google_userinfo_url, headers=headers, timeout=10)
+            resp.raise_for_status()
+        except Timeout:
+            raise Exception("Request to Google userinfo endpoint timed out")
+        except RequestsConnectionError:
+            raise Exception("Failed to connect to Google userinfo endpoint")
+        except requests.HTTPError:
+            raise Exception(f"Google userinfo request failed with status {resp.status_code}: {resp.text}")
+        except RequestException as e:
+            raise Exception(f"Unexpected error during Google userinfo request: {str(e)}")
+        
+        try:
+            user_profile = resp.json()
+        except ValueError as e:
+            raise Exception(f"Invalid JSON response from Google userinfo endpoint: {str(e)}")
+        
+        return user_profile

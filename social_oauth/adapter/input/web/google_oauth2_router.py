@@ -1,25 +1,17 @@
 import uuid
 import httpx
 
-from fastapi import APIRouter, Response, Request, Cookie, HTTPException
+from fastapi import APIRouter, Request, Cookie
 from fastapi.responses import RedirectResponse
 
-from account.adapter.input.web.account_router import create_account, update_account
-from account.adapter.input.web.request.create_account_request import CreateAccountRequest
-from account.application.usecase.account_usecase import AccountUseCase
-from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
+from config.google_oauth_config import get_google_oauth2_service, get_google_oauth2_usecase
 from config.redis_config import get_redis
-from social_oauth.application.usecase.google_oauth2_usecase import GoogleOAuth2UseCase
-from social_oauth.infrastructure.service.google_oauth2_service import GoogleOAuth2Service
 
-# get_instance 방식으로 변경
+# Singleton 방식으로 변경
 authentication_router = APIRouter()
-service = GoogleOAuth2Service()
-usecase = GoogleOAuth2UseCase(service)
+service = get_google_oauth2_service()
+usecase = get_google_oauth2_usecase()
 redis_client = get_redis()
-
-GOOGLE_USERINFO_URI = "https://www.googleapis.com/oauth2/v3/userinfo"
-
 
 @authentication_router.get("/google")
 async def redirect_to_google():
@@ -30,104 +22,27 @@ async def redirect_to_google():
 
 @authentication_router.get("/google/redirect")
 async def process_google_redirect(
-        response: Response,
         code: str,
         state: str | None = None
 ):
     print("[DEBUG] /google/redirect called")
 
-    # code -> access token
-    access_token = usecase.login_and_fetch_user(state or "", code)
-    r = httpx.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": access_token.access_token})
-    print(r.status_code, r.text)
-
-    # access token으로 유저 정보 요청
-    try:
-        async with httpx.AsyncClient() as client:
-            res = await client.get(
-                GOOGLE_USERINFO_URI,
-                headers={"Authorization": f"Bearer {access_token.access_token}"},
-                timeout=10.0
-            )
-
-        print("[DEBUG] Google user info request response:", res)
-        if res.status_code != 200:
-            print("[WARN] Failed to retrieve Google user info:", res.status_code)
-            raise HTTPException(status_code=400, detail="Failed to retrieve Google user info")
-
-        userinfo = res.json()
-        print("[DEBUG] Google user info:", userinfo)
-
-        # sub(id) 추출
-        google_id = userinfo.get("sub")
-
-        if not google_id:
-            raise HTTPException(status_code=400, detail="Google 'sub' field missing")
-
-        print("[DEBUG] Google user id(sub):", google_id)
-
-    except Exception as e:
-        print("[ERROR] Exception during Google user info retrieval:", e)
-        raise HTTPException(status_code=500, detail="Exception during Google user info retrieval")
-
-    finally:
-        await client.aclose()
-
-    print("[DEBUG] Google user info retrieved successfully")
-
     # session_id 생성
     session_id = str(uuid.uuid4())
     print("[DEBUG] Generated session_id:", session_id)
 
-    # userId(oauth_id)에 일치하는 account 있는지 확인 한다.
-    account_usecase = AccountUseCase(AccountRepositoryImpl())
-    existing_account = account_usecase.get_account_by_oauth_id("GOOGLE", google_id)
-
-    print("[DEBUG] Existing account:", existing_account)
-    if existing_account:
-        print("[DEBUG] Account already exists. Redirecting to /")
-        account = update_account(
-            request=CreateAccountRequest(
-                user_uuid=existing_account.user_uuid,
-                oauth_id=existing_account.oauth_id,
-                oauth_type=existing_account.oauth_type,
-                nickname=existing_account.nickname,
-                name=existing_account.name,
-                profile_image=existing_account.profile_image,
-                email=existing_account.email,
-                phone_number=existing_account.phone_number,
-                active_status=existing_account.active_status,
-                role_id=existing_account.role_id,
-            )
-        )
-        print("[DEBUG] Account updated:", account)
-    else:
-        print("[DEBUG] Account does not exist. Creating a new account.")
-
-        # Create a new account using the retrieved user info
-        account = await create_account(
-            request=CreateAccountRequest(
-                user_uuid=session_id,
-                oauth_id=google_id,
-                oauth_type="GOOGLE",
-                nickname="",
-                name=userinfo.get("name"),
-                profile_image=userinfo.get("picture"),
-                email=userinfo.get("email"),
-                phone_number="",
-                active_status="Y",
-                role_id=""
-            )
-        )
-        print("[DEBUG] Account created:", account)
+    # code -> access token
+    access_token = await usecase.login_and_fetch_user(state or "", code, session_id)
+    r = httpx.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": access_token.access_token})
+    print(r.status_code, r.text)
 
     # Redis에 session 저장 (1시간 TTL)
     redis_client.set(session_id, access_token.access_token, ex=3600)
     print("[DEBUG] Session saved in Redis:", redis_client.exists(session_id))
 
     # 브라우저 쿠키 발급
-    redirect_response = RedirectResponse("http://localhost:3000")
-    redirect_response.set_cookie(
+    response = RedirectResponse("http://localhost:3000")
+    response.set_cookie(
         key="session_id",
         value=session_id,
         httponly=True,
@@ -135,7 +50,7 @@ async def process_google_redirect(
         max_age=3600
     )
     print("[DEBUG] Cookie set in RedirectResponse directly")
-    return redirect_response
+    return response
 
 
 @authentication_router.get("/status")
