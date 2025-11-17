@@ -12,6 +12,7 @@ from config.redis_config import get_redis
 from social_oauth.application.usecase.google_oauth2_usecase import GoogleOAuth2UseCase
 from social_oauth.infrastructure.service.google_oauth2_service import GoogleOAuth2Service
 
+# get_instance 방식으로 변경
 authentication_router = APIRouter()
 service = GoogleOAuth2Service()
 usecase = GoogleOAuth2UseCase(service)
@@ -100,7 +101,6 @@ async def process_google_redirect(
             )
         )
         print("[DEBUG] Account updated:", account)
-        return RedirectResponse("/")
     else:
         print("[DEBUG] Account does not exist. Creating a new account.")
 
