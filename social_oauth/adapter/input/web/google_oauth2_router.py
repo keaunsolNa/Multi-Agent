@@ -19,6 +19,22 @@ async def redirect_to_google():
     print("[DEBUG] Redirecting to Google:", url)
     return RedirectResponse(url)
 
+@authentication_router.get("/google/logout")
+async def logout_to_google(request: Request, session_id: str | None = Cookie(None)):
+    print("[DEBUG] Logout called")
+
+    print("[DEBUG] Request headers:", request.headers)
+
+    if not session_id:
+        print("[DEBUG] No session_id received. Returning logged_in: False")
+        return {"logged_in": False}
+    exists = redis_client.exists(session_id)
+    print("[DEBUG] Redis has session_id?", exists)
+    if exists:
+        redis_client.delete(session_id)
+        print("[DEBUG] Redis session_id deleted:", redis_client.exists(session_id))
+
+    return {"logged_out": bool(exists)}
 
 @authentication_router.get("/google/redirect")
 async def process_google_redirect(
