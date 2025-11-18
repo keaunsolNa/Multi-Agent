@@ -4,13 +4,14 @@ import httpx
 from fastapi import APIRouter, Request, Cookie
 from fastapi.responses import RedirectResponse
 
-from config.google_oauth_config import get_google_oauth2_service, get_google_oauth2_usecase
 from config.redis_config import get_redis
+from social_oauth.application.usecase.google_oauth2_usecase import GoogleOAuth2UseCase
+from social_oauth.infrastructure.service.google_oauth2_service import GoogleOAuth2Service
 
 # Singleton 방식으로 변경
 authentication_router = APIRouter()
-service = get_google_oauth2_service()
-usecase = get_google_oauth2_usecase()
+service = GoogleOAuth2Service().get_instance()
+usecase = GoogleOAuth2UseCase().get_instance()
 redis_client = get_redis()
 
 @authentication_router.get("/google")

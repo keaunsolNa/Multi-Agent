@@ -3,11 +3,25 @@ from typing import Optional
 from board.adapter.input.web.request.create_board_request import CreateBoardRequest
 from board.adapter.input.web.request.update_board_request import UpdateBoardRequest
 from board.domain.baord import Board
+from board.infrastructure.repository.board_repository_impl import BoardRepositoryImpl
 
 
 class BoardUseCase:
-    def __init__(self, board_repo):
-        self.board_repo = board_repo
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+            cls.__instance.board_repo = BoardRepositoryImpl.get_instance()
+
+        return cls.__instance
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
+
+        return cls.__instance
 
     def create_board(self, board_type:str, user_id:str, title: str, content: str) -> Board:
         board = Board(board_type=board_type, user_id=user_id, title=title, content=content)

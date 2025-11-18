@@ -6,7 +6,7 @@ from account.application.usecase.account_usecase import AccountUseCase
 from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
 
 account_router = APIRouter()
-usecase = AccountUseCase(AccountRepositoryImpl())
+usecase = AccountUseCase().get_instance()
 
 
 @account_router.post("/create", response_model=AccountResponse)
@@ -29,6 +29,7 @@ async def create_account(request: CreateAccountRequest):
         updated_at=account.updated_at
     )
 
+
 @account_router.get("/list", response_model=list[AccountResponse])
 def list_accounts():
     account = usecase.list_account()
@@ -48,6 +49,7 @@ def list_accounts():
             created_at=a.created_at,
         ) for a in account
     ]
+
 
 @account_router.get("/{user_uuid}", response_model=AccountResponse)
 def get_account_by_user_uuid(user_uuid: str):
@@ -69,6 +71,7 @@ def get_account_by_user_uuid(user_uuid: str):
         role_id=account.role_id
     )
 
+
 @account_router.get("/{oauth_type}/{oauth_id}", response_model=AccountResponse)
 def get_account_by_oauth_id(oauth_type: str, oauth_id: str):
     account = usecase.get_account_by_oauth_id(oauth_type, oauth_id)
@@ -89,6 +92,7 @@ def get_account_by_oauth_id(oauth_type: str, oauth_id: str):
         role_id=account.role_id
     )
 
+
 @account_router.put("/update", response_model=AccountResponse)
 def update_account(request: CreateAccountRequest):
     account = usecase.update(request)
@@ -106,6 +110,7 @@ def update_account(request: CreateAccountRequest):
         updated_at=account.updated_at,
         created_at=account.created_at
     )
+
 
 @account_router.delete("/delete/{user_uuid}")
 def delete_account(user_uuid: str):

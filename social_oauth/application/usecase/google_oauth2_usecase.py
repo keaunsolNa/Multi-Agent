@@ -3,11 +3,21 @@ from account.application.usecase.account_usecase import AccountUseCase
 from social_oauth.infrastructure.service.google_oauth2_service import GoogleOAuth2Service, GetAccessTokenRequest, \
     AccessToken
 
+account_usecase = AccountUseCase().get_instance()
 
 class GoogleOAuth2UseCase:
-    def __init__(self, service: GoogleOAuth2Service, account_usecase: AccountUseCase):
-        self.service = service
-        self.account_usecase = account_usecase
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance
 
     @staticmethod
     def get_authorization_url() -> str:
@@ -45,7 +55,7 @@ class GoogleOAuth2UseCase:
         if not sso_id:
             raise ValueError("User profile does not contain 'sub' field")
         
-        existing_account = self.account_usecase.get_account_by_oauth_id("GOOGLE", sso_id)
+        existing_account = account_usecase.get_account_by_oauth_id("GOOGLE", sso_id)
         
         if existing_account:
             # 기존 계정이 있는 경우, 변경된 필드만 업데이트
@@ -54,7 +64,8 @@ class GoogleOAuth2UseCase:
             # 새 계정 생성
             await self._create_new_account(user_profile, session_id, sso_id)
 
-    def _update_account_if_changed(self, existing_account, user_profile: dict) -> None:
+    @staticmethod
+    def _update_account_if_changed(existing_account, user_profile: dict) -> None:
         # 기존 계정의 정보가 변경된 경우에만 업데이트
         name = user_profile.get("name") or ""
         profile_image = user_profile.get("picture") or ""
@@ -80,11 +91,12 @@ class GoogleOAuth2UseCase:
                 active_status=existing_account.active_status,
                 role_id=existing_account.role_id,
             )
-            self.account_usecase.update(update_request)
+            account_usecase.update(update_request)
 
-    async def _create_new_account(self, user_profile: dict, session_id: str, sso_id: str) -> None:
+    @staticmethod
+    async def _create_new_account(user_profile: dict, session_id: str, sso_id: str) -> None:
         # 새로운 계정을 생성
-        await self.account_usecase.create_account(
+        await account_usecase.create_account(
             user_uuid=session_id,
             oauth_id=sso_id,
             oauth_type="GOOGLE",

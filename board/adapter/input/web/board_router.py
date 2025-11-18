@@ -10,13 +10,12 @@ from board.domain.baord import Board
 from board.infrastructure.repository.board_repository_impl import BoardRepositoryImpl
 
 board_router = APIRouter()
-usecase = BoardUseCase(BoardRepositoryImpl())
-user_case = AccountUseCase(AccountRepositoryImpl())
+usecase = BoardUseCase().get_instance()
+user_case = AccountUseCase().get_instance()
 
 @board_router.post("/create", response_model=BoardResponse)
 def create_board(request: CreateBoardRequest):
     user = user_case.get_account_by_user_uuid(request.user_id)
-    print("DEBUG USER", user)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 

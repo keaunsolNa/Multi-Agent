@@ -9,6 +9,22 @@ from social_oauth.adapter.input.web.response.access_token import AccessToken
 
 
 class GoogleOAuth2Service:
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance
+
+    def __init__(self):
+        if not hasattr(self, "client_id"):
+            self.client_id = self._get_env_var("GOOGLE_CLIENT_ID")
 
     @staticmethod
     def _get_env_var(key: str) -> str:
